@@ -181,7 +181,7 @@ export function Editor({ config, onChange }: EditorProps) {
           <div className="flex items-center justify-between">
             <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Icon Layer</label>
             <button 
-              onClick={() => updateConfig({ iconSize: 60, iconColor: '#ffffff', iconUseGradient: false })}
+              onClick={() => updateConfig({ iconSize: 60, iconColor: '#ffffff', iconUseGradient: false, strokeWidth: 2 })}
               className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
             >
               Reset
@@ -207,14 +207,42 @@ export function Editor({ config, onChange }: EditorProps) {
                 />
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300 space-y-3">
                 <ColorField 
-                  label="Fill Color" 
+                  label="Icon Color" 
                   value={config.iconColor} 
                   onChange={(c) => updateConfig({ iconColor: c })} 
                 />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['#ffffff', '#000000', '#4f46e5', '#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#ec4899'].map(c => (
+                    <button
+                      key={c}
+                      className={`h-5 w-5 rounded-md border border-slate-200 shadow-sm transition-transform active:scale-90 ${config.iconColor === c ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}`}
+                      style={{ backgroundColor: c }}
+                      onClick={() => updateConfig({ iconColor: c })}
+                    />
+                  ))}
+                </div>
               </div>
             )}
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Stroke / Weight</span>
+                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.strokeWidth}px</span>
+              </div>
+              <Slider 
+                value={[config.strokeWidth]} 
+                min={0} 
+                max={12} 
+                step={0.5} 
+                className="py-2"
+                onValueChange={(val) => {
+                  const value = Array.isArray(val) ? val[0] : val;
+                  updateConfig({ strokeWidth: value });
+                }}
+              />
+            </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
               <div className="flex justify-between items-center">
@@ -259,17 +287,15 @@ export function Editor({ config, onChange }: EditorProps) {
             ].map((shape) => (
               <div key={shape.id}>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={`h-9 w-full flex items-center justify-center rounded-lg transition-all transform active:scale-90 ${
-                        config.bgShape === shape.id 
-                        ? 'bg-white shadow-md ring-1 ring-slate-200 text-indigo-600 scale-105 z-10' 
-                        : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                      }`}
-                      onClick={() => updateConfig({ bgShape: shape.id as BackgroundShape })}
-                    >
-                      <shape.icon className="h-4 w-4" />
-                    </button>
+                  <TooltipTrigger
+                    className={`h-9 w-full flex items-center justify-center rounded-lg transition-all transform active:scale-95 ${
+                      config.bgShape === shape.id 
+                      ? 'bg-white shadow-md ring-1 ring-slate-200 text-indigo-600 scale-105 z-10 font-bold' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                    }`}
+                    onClick={() => updateConfig({ bgShape: shape.id as BackgroundShape })}
+                  >
+                    <shape.icon className="h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     <p className="text-[10px] font-bold uppercase">{shape.label}</p>

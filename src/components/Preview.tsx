@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react';
 import { motion } from 'motion/react';
 import { Monitor, Smartphone, Globe, Folder, Search } from 'lucide-react';
 import { IconConfig, IconSetItem } from '../types';
-import { getGradientCss, getBackgroundPath } from '../lib/icon-utils';
+import { getGradientCss, getBackgroundPath, getSvgGradientDef } from '../lib/icon-utils';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
@@ -18,47 +18,67 @@ interface PreviewProps {
 export function Preview({ config, svgContent, iconSet, hideMockups = false, onlyMockups = false }: PreviewProps) {
   const primaryIconFullId = `${config.iconSet}:${config.iconName}`;
   
-  const IconLayer = ({ fullId = primaryIconFullId, className = "" }: { fullId?: string; className?: string }) => (
-    <div 
-      className={`flex items-center justify-center overflow-hidden relative ${className}`}
-      style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: !config.bgUseGradient ? config.bgColor : undefined,
-        backgroundImage: config.bgUseGradient ? getGradientCss(config.bgGradient) : undefined,
-        borderRadius: config.bgShape === 'square' ? `${config.borderRadius}px` : 
-                      config.bgShape === 'squircle' ? '25%' : 
-                      config.bgShape === 'circle' ? '50%' : '0',
-        clipPath: config.bgShape === 'hexagon' ? 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' :
-                  config.bgShape === 'shield' ? 'polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%)' : undefined,
-         boxShadow: config.shadowEnabled ? `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px ${config.shadowColor}` : 'none'
-      }}
-    >
+  const IconLayer = ({ fullId = primaryIconFullId, className = "", itemSvg }: { fullId?: string; className?: string; itemSvg?: string }) => {
+    const currentSvgBody = itemSvg || svgContent || '';
+    const iconGradId = `icon-preview-grad-${Math.random().toString(36).substr(2, 9)}`;
+    const iconGradDef = config.iconUseGradient ? getSvgGradientDef(iconGradId, config.iconGradient) : '';
+    const iconColor = config.iconUseGradient ? `url(#${iconGradId})` : config.iconColor;
+
+    return (
       <div 
+        className={`flex items-center justify-center overflow-hidden relative ${className}`}
         style={{
-          width: `${config.iconSize}%`,
-          height: `${config.iconSize}%`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: `${config.bgPadding}px`,
+          width: '100%',
+          height: '100%',
+          backgroundColor: !config.bgUseGradient ? config.bgColor : undefined,
+          backgroundImage: config.bgUseGradient ? getGradientCss(config.bgGradient) : undefined,
+          borderRadius: config.bgShape === 'square' ? `${config.borderRadius}px` : 
+                        config.bgShape === 'squircle' ? '25%' : 
+                        config.bgShape === 'circle' ? '50%' : '0',
+          clipPath: config.bgShape === 'hexagon' ? 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' :
+                    config.bgShape === 'shield' ? 'polygon(0% 0%, 100% 0%, 100% 70%, 50% 100%, 0% 70%)' : undefined,
+          boxShadow: config.shadowEnabled ? `${config.shadowX}px ${config.shadowY}px ${config.shadowBlur}px ${config.shadowColor}` : 'none'
         }}
       >
-        <span 
-          className="w-full h-full flex items-center justify-center"
+        <div 
           style={{
-            color: !config.iconUseGradient ? config.iconColor : 'transparent',
-            backgroundImage: config.iconUseGradient ? getGradientCss(config.iconGradient) : 'none',
-            WebkitBackgroundClip: config.iconUseGradient ? 'text' : 'unset',
-            backgroundClip: config.iconUseGradient ? 'text' : 'unset',
+            width: `${config.iconSize}%`,
+            height: `${config.iconSize}%`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: `${config.bgPadding}px`,
             filter: config.shadowEnabled ? `drop-shadow(${config.shadowX}px ${config.shadowY}px 2px ${config.shadowColor})` : 'none'
           }}
         >
-           <Icon icon={fullId} className="w-full h-full" />
-        </span>
+          {currentSvgBody ? (
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              className="w-full h-full"
+              preserveAspectRatio="xMidYMid meet"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  <defs>${iconGradDef}</defs>
+                  <g 
+                    fill="${currentSvgBody.includes('fill=') ? iconColor : 'none'}" 
+                    stroke="${currentSvgBody.includes('stroke=') || !currentSvgBody.includes('fill=') ? iconColor : 'none'}"
+                    stroke-width="${config.strokeWidth}"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    ${currentSvgBody}
+                  </g>
+                `
+              }}
+            />
+          ) : (
+            <div className="animate-pulse bg-slate-200 w-full h-full rounded-md" />
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (onlyMockups) {
     return (
@@ -119,7 +139,7 @@ export function Preview({ config, svgContent, iconSet, hideMockups = false, only
               className="flex flex-col items-center gap-3"
             >
               <div className="w-32 h-32">
-                <IconLayer fullId={item.id} />
+                <IconLayer fullId={item.id} itemSvg={item.svgContent} />
               </div>
               <span className="text-[10px] font-bold text-slate-400 uppercase truncate max-w-[100px]">{item.name}</span>
             </motion.div>

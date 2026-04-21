@@ -241,13 +241,13 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName, currentSet
                     <Icon icon={fullId} className="h-6 w-6" />
                     {mode === 'single' && !isSelected && (
                       <div 
-                        className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 bg-slate-900 text-white rounded-lg p-1 shadow-lg ring-4 ring-white"
+                        className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 bg-indigo-600 text-white rounded-lg p-1.5 shadow-lg ring-4 ring-white z-20"
                         onClick={(e) => {
                           e.stopPropagation();
                           onSetSelect([...currentSet, { id: fullId, name: icon.name, set: icon.set }]);
                         }}
                       >
-                        <ListPlus className="h-3 w-3" />
+                        <ListPlus className="h-3.5 w-3.5" />
                       </div>
                     )}
                   </button>

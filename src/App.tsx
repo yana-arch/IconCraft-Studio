@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
   Settings2, 
@@ -25,7 +25,7 @@ import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { ExportPanel } from './components/ExportPanel';
 import { Button } from './components/ui/button';
-import { TooltipProvider } from './components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
 import { Separator } from './components/ui/separator';
 
 const INITIAL_CONFIG: IconConfig = {
@@ -62,6 +62,7 @@ export default function App() {
   const [svgContents, setSvgContents] = useState<Record<string, string>>({});
   const [leftTab, setLeftTab] = useState<'library' | 'design'>('library');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [stageTheme, setStageTheme] = useState<'light' | 'dark' | 'grid' | 'mesh'>('grid');
 
   // Persistence
   useEffect(() => {
@@ -132,6 +133,56 @@ export default function App() {
     setConfig(prev => ({ ...prev, id: first.id, iconName: first.name, iconSet: first.set }));
   };
 
+  const applyPresetStyle = (style: 'flat' | 'glossy' | 'outline' | 'neon') => {
+    switch (style) {
+      case 'flat':
+        setConfig(prev => ({ 
+          ...prev, 
+          bgUseGradient: false, 
+          bgColor: '#3b82f6', 
+          iconUseGradient: false, 
+          iconColor: '#ffffff',
+          shadowEnabled: false
+        }));
+        break;
+      case 'glossy':
+        setConfig(prev => ({ 
+          ...prev, 
+          bgUseGradient: true, 
+          bgGradient: PRESET_GRADIENTS[4],
+          iconUseGradient: true,
+          iconGradient: PRESET_GRADIENTS[3],
+          shadowEnabled: true,
+          shadowBlur: 15,
+          shadowY: 6
+        }));
+        break;
+      case 'outline':
+        setConfig(prev => ({ 
+          ...prev, 
+          bgUseGradient: false, 
+          bgColor: '#ffffff',
+          iconUseGradient: false,
+          iconColor: '#334155',
+          strokeWidth: 2,
+          shadowEnabled: false
+        }));
+        break;
+      case 'neon':
+        setConfig(prev => ({ 
+          ...prev, 
+          bgUseGradient: false, 
+          bgColor: '#0f172a',
+          iconUseGradient: true,
+          iconGradient: PRESET_GRADIENTS[0],
+          shadowEnabled: true,
+          shadowColor: 'rgba(240, 147, 251, 0.5)',
+          shadowBlur: 20
+        }));
+        break;
+    }
+  };
+
   const primarySvgContent = svgContents[`${config.iconSet}:${config.iconName}`] || '';
   const fullIconSet = iconSet.map(item => ({
     ...item,
@@ -167,6 +218,22 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 max-w-[200px]">
+              {(['flat', 'glossy', 'outline', 'neon'] as const).map(s => (
+                <div key={s} className="flex-1">
+                  <Tooltip>
+                    <TooltipTrigger
+                      onClick={() => applyPresetStyle(s)}
+                      className="w-full px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all duration-200 hover:bg-white hover:shadow-sm hover:text-indigo-600 text-slate-500"
+                    >
+                      {s[0]}
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[10px] font-bold">Style: {s.toUpperCase()}</TooltipContent>
+                  </Tooltip>
+                </div>
+              ))}
+            </div>
+            <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block" />
             <div className="hidden md:flex items-center bg-slate-100/80 p-1 rounded-lg border border-slate-200/60">
               <button 
                 onClick={() => setLeftTab('library')}
@@ -191,34 +258,90 @@ export default function App() {
         <main className="flex flex-1 min-h-0 overflow-hidden relative">
           {/* Left Sidebar: Library or Design */}
           <aside className="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white shrink-0 overflow-hidden">
-            <div className="flex-1 overflow-hidden flex flex-col">
-              {leftTab === 'library' ? (
-                <IconPicker 
-                  selectedIconName={`${config.iconSet}:${config.iconName}`}
-                  onSelect={handleIconSelect}
-                  onSetSelect={handleSetSelect}
-                  currentSet={iconSet}
-                />
-              ) : (
-                <Editor config={config} onChange={setConfig} />
-              )}
+            <div className="flex-1 overflow-hidden flex flex-col relative">
+              <AnimatePresence mode="wait">
+                {leftTab === 'library' ? (
+                  <motion.div 
+                    key="library"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="flex-1 overflow-hidden flex flex-col"
+                  >
+                    <IconPicker 
+                      selectedIconName={`${config.iconSet}:${config.iconName}`}
+                      onSelect={handleIconSelect}
+                      onSetSelect={handleSetSelect}
+                      currentSet={iconSet}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="design"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="flex-1 overflow-hidden flex flex-col"
+                  >
+                    <Editor config={config} onChange={setConfig} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </aside>
 
           {/* Central Section: Preview */}
-          <section className="flex-1 studio-grid flex flex-col min-w-0 overflow-hidden relative">
-            <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none" />
+          <section className={`flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-500 ${
+            stageTheme === 'dark' ? 'bg-slate-900' : 
+            stageTheme === 'light' ? 'bg-white' : 
+            stageTheme === 'mesh' ? 'bg-indigo-500' : 'bg-slate-50'
+          }`}>
+            {stageTheme === 'grid' && <div className="absolute inset-0 studio-grid pointer-events-none" />}
+            {stageTheme === 'mesh' && (
+              <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ 
+                backgroundImage: 'radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%)' 
+              }} />
+            )}
             
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center bg-white/80 backdrop-blur border border-slate-200/50 p-1 rounded-full shadow-sm">
+              {(['light', 'dark', 'grid', 'mesh'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setStageTheme(t)}
+                  className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${
+                    stageTheme === t ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
             <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-10 overflow-auto high-density-scrollbar">
               <div className="relative group">
-                <div className="absolute inset-x-0 -bottom-12 flex justify-center">
-                   <div className="bg-white/80 backdrop-blur border border-slate-200/50 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-x-0 -bottom-16 flex flex-col items-center gap-3">
+                   <div className="bg-white/80 backdrop-blur border border-slate-200/50 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Draft Viewport</span>
                       <Separator orientation="vertical" className="h-2" />
                       <span className="text-[10px] font-mono text-indigo-600">512×512</span>
                    </div>
+                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all delay-75 translate-y-2 group-hover:translate-y-0">
+                     <Button 
+                       variant="secondary" 
+                       size="sm" 
+                       className="h-8 rounded-full bg-white shadow-sm border-slate-200 text-[10px] uppercase font-bold"
+                       onClick={() => {
+                         const svg = document.querySelector('.icon-preview-main svg');
+                         if (svg) {
+                           navigator.clipboard.writeText(svg.outerHTML);
+                         }
+                       }}
+                     >
+                       Copy SVG
+                     </Button>
+                   </div>
                 </div>
-                <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02]">
+                <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02] icon-preview-main">
                   <Preview config={config} svgContent={primarySvgContent} iconSet={fullIconSet} hideMockups />
                 </div>
               </div>
@@ -246,31 +369,57 @@ export default function App() {
                 <ExportPanel config={config} svgContent={primarySvgContent} iconSet={fullIconSet} />
              </div>
              
-             <div className="p-4 border-t border-slate-100 flex flex-col gap-3">
+             <div className="p-4 border-t border-slate-100 flex flex-col gap-4 overflow-hidden">
                <div className="flex items-center justify-between">
-                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Assets in Pack</label>
+                 <div className="flex flex-col gap-0.5">
+                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Assets in Pack</label>
+                   <span className="text-[9px] text-slate-400 font-medium">Click to select active icon</span>
+                 </div>
                  {iconSet.length > 1 && (
                    <button 
                      onClick={clearSet}
-                     className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-tighter"
+                     className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded transition-colors uppercase tracking-tighter"
                    >
-                     Clear Set
+                     Reset Set
                    </button>
                  )}
                </div>
-               <div className="flex flex-wrap gap-2">
+               <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto high-density-scrollbar pb-2">
                  {iconSet.map((item, idx) => (
-                   <div key={idx} className="group h-8 pl-2 pr-1 rounded bg-slate-50 border border-slate-200 flex items-center gap-1.5 transition-all hover:border-slate-300">
-                     <span className="text-[10px] font-medium text-slate-600 truncate max-w-[80px]">{item.name}</span>
+                   <motion.div 
+                     key={idx} 
+                     layout
+                     initial={{ opacity: 0, x: -10 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className={`group h-10 pl-2 pr-1 rounded-xl border flex items-center gap-2 transition-all cursor-pointer ${
+                       config.id === item.id 
+                       ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-200' 
+                       : 'bg-white border-slate-200 hover:border-slate-300'
+                     }`}
+                     onClick={() => setConfig(prev => ({ ...prev, iconName: item.name, iconSet: item.set, id: item.id }))}
+                   >
+                     <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center overflow-hidden shrink-0">
+                        {svgContents[item.id] ? (
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 text-slate-600" dangerouslySetInnerHTML={{ __html: svgContents[item.id] }} />
+                        ) : (
+                          <Layers className="w-3 h-3 text-slate-400" />
+                        )}
+                     </div>
+                     <span className={`text-[10px] font-bold truncate max-w-[70px] ${config.id === item.id ? 'text-indigo-700' : 'text-slate-600'}`}>
+                       {item.name}
+                     </span>
                      {iconSet.length > 1 && (
                        <button 
-                         onClick={() => removeItem(item.id)}
-                         className="p-1 text-slate-300 hover:text-red-500 rounded-sm hover:bg-red-50 transition-colors"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           removeItem(item.id);
+                         }}
+                         className="p-1 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all"
                        >
                          <X className="h-2.5 w-2.5" />
                        </button>
                      )}
-                   </div>
+                   </motion.div>
                  ))}
                </div>
              </div>

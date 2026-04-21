@@ -113,6 +113,8 @@ export async function renderIconToDataUrl(
          </filter>`
       : "";
 
+    const iconColor = config.iconUseGradient ? `url(#${iconGradId})` : config.iconColor;
+
     const fullSvg = `
       <svg xmlns="http://www.w3.org/2000/svg" width="${targetSize}" height="${targetSize}" viewBox="0 0 ${targetSize} ${targetSize}">
         <defs>
@@ -122,7 +124,15 @@ export async function renderIconToDataUrl(
         <path d="${bgPath}" fill="${config.bgUseGradient ? `url(#${bgGradId})` : config.bgColor}" />
         <g transform="translate(${(targetSize - finalIconSize) / 2}, ${(targetSize - finalIconSize) / 2}) scale(${finalIconSize / 24})">
           <g filter="${config.shadowEnabled ? 'url(#shadow)' : ''}">
-            ${svgContent.replace(/fill="[^"]*"/g, `fill="${config.iconUseGradient ? `url(#${iconGradId})` : config.iconColor}"`)}
+            <g 
+              fill="${svgContent.includes('fill=') ? iconColor : 'none'}" 
+              stroke="${svgContent.includes('stroke=') || !svgContent.includes('fill=') ? iconColor : 'none'}" 
+              stroke-width="${config.strokeWidth}"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              ${svgContent}
+            </g>
           </g>
         </g>
       </svg>
