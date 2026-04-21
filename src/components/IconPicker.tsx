@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
-import { Search, Loader2, ListPlus, ChevronRight, Check, X } from 'lucide-react';
+import { Search, Loader2, ListPlus, ChevronRight, Check, X, Sparkles } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { IconSetItem } from '../types';
+import { suggestIcons } from '../services/aiService';
 
 interface IconPickerProps {
   onSelect: (iconName: string, iconSet: string) => void;
   onSetSelect: (items: IconSetItem[]) => void;
   selectedIconName: string;
+  currentSet: IconSetItem[];
 }
 
 const ICON_SETS = [
@@ -22,7 +24,7 @@ const ICON_SETS = [
   { id: 'ri', name: 'Remix' },
 ];
 
-export function IconPicker({ onSelect, onSetSelect, selectedIconName }: IconPickerProps) {
+export function IconPicker({ onSelect, onSetSelect, selectedIconName, currentSet }: IconPickerProps) {
   const [mode, setMode] = useState<'single' | 'batch'>('single');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<{ name: string; set: string }[]>([]);
@@ -34,6 +36,7 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName }: IconPick
   const [batchKeywords, setBatchKeywords] = useState<string[]>([]);
   const [currentKeywordIndex, setCurrentKeywordIndex] = useState(-1);
   const [batchItems, setBatchItems] = useState<IconSetItem[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     const fetchIcons = async () => {
@@ -76,6 +79,19 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName }: IconPick
     setCurrentKeywordIndex(0);
     setBatchItems([]);
     setSearch('');
+  };
+
+  const handleAiSuggest = async () => {
+    if (!batchInput || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const suggestions = await suggestIcons(batchInput);
+      if (suggestions.length > 0) {
+        setBatchInput(suggestions.join(', '));
+      }
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleIconClick = (name: string, set: string) => {
@@ -126,18 +142,32 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName }: IconPick
 
         {mode === 'batch' && currentKeywordIndex === -1 ? (
           <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-            <p className="text-[10px] text-slate-500 leading-tight">
-              Enter icon names separated by spaces or commas (e.g. home, user, settings)
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Enter theme or list of icons
+              </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`h-5 text-indigo-600 hover:text-indigo-700 p-0 px-1 text-[9px] font-bold gap-1 ${!batchInput ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleAiSuggest}
+                disabled={!batchInput || aiLoading}
+              >
+                {aiLoading ? <Loader2 className="h-2 w-2 animate-spin" /> : <Sparkles className="h-2.5 w-2.5" />}
+                Magic Suggest
+              </Button>
+            </div>
             <div className="flex gap-2">
-              <Input 
-                placeholder="e.g. home user settings" 
-                className="h-8 text-xs bg-slate-50"
-                value={batchInput}
-                onChange={(e) => setBatchInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && startBatch()}
-              />
-              <Button size="sm" className="h-8 bg-indigo-600" onClick={startBatch}>
+              <div className="relative flex-1">
+                <Input 
+                  placeholder="e.g. food, travels, social..." 
+                  className="h-8 text-xs bg-slate-50"
+                  value={batchInput}
+                  onChange={(e) => setBatchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && startBatch()}
+                />
+              </div>
+              <Button size="sm" className="h-8 bg-indigo-600 text-white hover:bg-indigo-700" onClick={startBatch}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -199,17 +229,28 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName }: IconPick
               const fullId = `${icon.set}:${icon.name}`;
               const isSelected = fullId === selectedIconName;
               return (
-                <button
-                  key={fullId}
-                  className={`h-10 w-10 p-0 flex items-center justify-center rounded-md border transition-all ${
-                    isSelected 
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-600 ring-1 ring-indigo-500' 
-                      : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
-                  }`}
-                  onClick={() => handleIconClick(icon.name, icon.set)}
-                >
-                  <Icon icon={fullId} className="h-5 w-5" />
-                </button>
+                  <button
+                    key={fullId}
+                    className={`h-10 w-10 p-0 flex items-center justify-center rounded-md border transition-all relative group ${
+                      isSelected 
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-600 ring-1 ring-indigo-500' 
+                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}
+                    onClick={() => handleIconClick(icon.name, icon.set)}
+                  >
+                    <Icon icon={fullId} className="h-5 w-5" />
+                    {mode === 'single' && !isSelected && (
+                      <div 
+                        className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white rounded-full p-0.5 shadow-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSetSelect([...currentSet, { id: fullId, name: icon.name, set: icon.set }]);
+                        }}
+                      >
+                        <ListPlus className="h-2.5 w-2.5" />
+                      </div>
+                    )}
+                  </button>
               );
             })}
             {results.length === 0 && !loading && search && (

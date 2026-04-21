@@ -50,11 +50,26 @@ const INITIAL_CONFIG: IconConfig = {
 };
 
 export default function App() {
-  const [config, setConfig] = useState<IconConfig>(INITIAL_CONFIG);
-  const [iconSet, setIconSet] = useState<IconSetItem[]>([{ id: 'lucide:home', name: 'home', set: 'lucide' }]);
+  const [config, setConfig] = useState<IconConfig>(() => {
+    const saved = localStorage.getItem('icon-craft-config');
+    return saved ? JSON.parse(saved) : INITIAL_CONFIG;
+  });
+  const [iconSet, setIconSet] = useState<IconSetItem[]>(() => {
+    const saved = localStorage.getItem('icon-craft-set');
+    return saved ? JSON.parse(saved) : [{ id: 'lucide:home', name: 'home', set: 'lucide' }];
+  });
   const [svgContents, setSvgContents] = useState<Record<string, string>>({});
   const [leftTab, setLeftTab] = useState<'library' | 'design'>('library');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Persistence
+  useEffect(() => {
+    localStorage.setItem('icon-craft-config', JSON.stringify(config));
+  }, [config]);
+
+  useEffect(() => {
+    localStorage.setItem('icon-craft-set', JSON.stringify(iconSet));
+  }, [iconSet]);
 
   // Fetch SVG bodies for the entire set
   useEffect(() => {
@@ -100,6 +115,20 @@ export default function App() {
       setConfig(prev => ({ ...prev, iconName: first.name, iconSet: first.set, id: first.id }));
     }
     setLeftTab('design');
+  };
+
+  const removeItem = (id: string) => {
+    setIconSet(prev => {
+      const filtered = prev.filter(item => item.id !== id);
+      if (filtered.length === 0) return prev; // Keep at least one
+      return filtered;
+    });
+  };
+
+  const clearSet = () => {
+    const first = iconSet[0];
+    setIconSet([first]);
+    setConfig(prev => ({ ...prev, id: first.id, iconName: first.name, iconSet: first.set }));
   };
 
   const primarySvgContent = svgContents[`${config.iconSet}:${config.iconName}`] || '';
@@ -156,6 +185,7 @@ export default function App() {
                   selectedIconName={`${config.iconSet}:${config.iconName}`}
                   onSelect={handleIconSelect}
                   onSetSelect={handleSetSelect}
+                  currentSet={iconSet}
                 />
               ) : (
                 <Editor config={config} onChange={setConfig} />
@@ -192,12 +222,30 @@ export default function App() {
                 <ExportPanel config={config} svgContent={primarySvgContent} iconSet={fullIconSet} />
              </div>
              
-             <div className="p-4 border-t border-slate-100">
-               <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-3 block">Assets in Pack</label>
+             <div className="p-4 border-t border-slate-100 flex flex-col gap-3">
+               <div className="flex items-center justify-between">
+                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Assets in Pack</label>
+                 {iconSet.length > 1 && (
+                   <button 
+                     onClick={clearSet}
+                     className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-tighter"
+                   >
+                     Clear Set
+                   </button>
+                 )}
+               </div>
                <div className="flex flex-wrap gap-2">
                  {iconSet.map((item, idx) => (
-                   <div key={idx} className="h-8 px-2 rounded bg-slate-50 border border-slate-200 flex items-center gap-1.5">
+                   <div key={idx} className="group h-8 pl-2 pr-1 rounded bg-slate-50 border border-slate-200 flex items-center gap-1.5 transition-all hover:border-slate-300">
                      <span className="text-[10px] font-medium text-slate-600 truncate max-w-[80px]">{item.name}</span>
+                     {iconSet.length > 1 && (
+                       <button 
+                         onClick={() => removeItem(item.id)}
+                         className="p-1 text-slate-300 hover:text-red-500 rounded-sm hover:bg-red-50 transition-colors"
+                       >
+                         <X className="h-2.5 w-2.5" />
+                       </button>
+                     )}
                    </div>
                  ))}
                </div>
