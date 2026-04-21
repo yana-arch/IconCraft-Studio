@@ -178,22 +178,28 @@ export function Editor({ config, onChange }: EditorProps) {
     <ScrollArea className="h-full high-density-scrollbar pb-16 lg:pb-0">
       <div className="p-4 space-y-6">
         <section className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
             <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Icon Layer</label>
+            <button 
+              onClick={() => updateConfig({ iconSize: 60, iconColor: '#ffffff', iconUseGradient: false })}
+              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+            >
+              Reset
+            </button>
           </div>
           
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-2 rounded-md bg-slate-50 border border-slate-100">
-              <Label className="text-[11px] font-medium text-slate-600">Use Gradient</Label>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
+              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Use Gradient</Label>
               <Switch 
                 checked={config.iconUseGradient} 
                 onCheckedChange={(checked) => updateConfig({ iconUseGradient: checked })} 
-                className="scale-90"
+                className="scale-90 data-[state=checked]:bg-indigo-600"
               />
             </div>
             
             {config.iconUseGradient ? (
-              <div className="p-3 rounded-md bg-indigo-50/50 border border-indigo-100">
+              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-4 animate-in fade-in zoom-in-95 duration-200">
                 <GradientEditor 
                   label="Icon Gradient" 
                   config={config.iconGradient} 
@@ -201,7 +207,7 @@ export function Editor({ config, onChange }: EditorProps) {
                 />
               </div>
             ) : (
-              <div className="p-2.5 rounded-md bg-slate-50 border border-slate-100">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300">
                 <ColorField 
                   label="Fill Color" 
                   value={config.iconColor} 
@@ -210,16 +216,17 @@ export function Editor({ config, onChange }: EditorProps) {
               </div>
             )}
 
-            <div className="p-2.5 rounded-md bg-slate-50 border border-slate-100 space-y-2">
-              <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                <span>Scale</span>
-                <span>{config.iconSize}%</span>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Icon Scale</span>
+                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.iconSize}%</span>
               </div>
               <Slider 
                 value={[config.iconSize]} 
                 min={10} 
                 max={100} 
                 step={1} 
+                className="py-2"
                 onValueChange={(val) => {
                   const value = Array.isArray(val) ? val[0] : val;
                   updateConfig({ iconSize: value });
@@ -229,12 +236,20 @@ export function Editor({ config, onChange }: EditorProps) {
           </div>
         </section>
 
-        <Separator className="opacity-50" />
+        <Separator className="opacity-40" />
 
         <section className="space-y-4">
-          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Background Layer</label>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Background Layer</label>
+            <button 
+              onClick={() => updateConfig({ bgShape: 'circle', bgPadding: 32, borderRadius: 16, bgUseGradient: true })}
+              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+            >
+              Reset
+            </button>
+          </div>
           
-          <div className="grid grid-cols-5 gap-1.5 p-1 bg-slate-100/50 rounded-lg border border-slate-200">
+          <div className="grid grid-cols-5 gap-2 p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60 shadow-inner">
             {[
               { id: 'circle', icon: Circle, label: 'Circle' },
               { id: 'square', icon: Square, label: 'Square' },
@@ -244,20 +259,20 @@ export function Editor({ config, onChange }: EditorProps) {
             ].map((shape) => (
               <div key={shape.id}>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <div
-                      className={`h-8 w-full flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                  <TooltipTrigger asChild>
+                    <button
+                      className={`h-9 w-full flex items-center justify-center rounded-lg transition-all transform active:scale-90 ${
                         config.bgShape === shape.id 
-                        ? 'bg-white shadow-sm ring-1 ring-slate-200 text-indigo-600' 
-                        : 'text-slate-400 hover:text-slate-600'
+                        ? 'bg-white shadow-md ring-1 ring-slate-200 text-indigo-600 scale-105 z-10' 
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                       }`}
                       onClick={() => updateConfig({ bgShape: shape.id as BackgroundShape })}
                     >
-                      <shape.icon className="h-3.5 w-3.5" />
-                    </div>
+                      <shape.icon className="h-4 w-4" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-[10px]">{shape.label}</p>
+                  <TooltipContent side="bottom">
+                    <p className="text-[10px] font-bold uppercase">{shape.label}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -265,17 +280,17 @@ export function Editor({ config, onChange }: EditorProps) {
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-2 px-3 rounded-md bg-slate-50 border border-slate-100">
-              <Label className="text-[11px] font-medium text-slate-600">Gradient</Label>
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
+              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Enable Gradient</Label>
               <Switch 
                 checked={config.bgUseGradient} 
                 onCheckedChange={(checked) => updateConfig({ bgUseGradient: checked })} 
-                className="scale-90"
+                className="scale-90 data-[state=checked]:bg-indigo-600"
               />
             </div>
             
             {config.bgUseGradient ? (
-              <div className="p-3 rounded-md bg-indigo-50/50 border border-indigo-100">
+              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-4 animate-in fade-in zoom-in-95 duration-200">
                 <GradientEditor 
                   label="Background Gradient" 
                   config={config.bgGradient} 
@@ -283,7 +298,7 @@ export function Editor({ config, onChange }: EditorProps) {
                 />
               </div>
             ) : (
-              <div className="p-2.5 rounded-md bg-slate-50 border border-slate-100">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300">
                 <ColorField 
                   label="Solid Color" 
                   value={config.bgColor} 
@@ -292,18 +307,19 @@ export function Editor({ config, onChange }: EditorProps) {
               </div>
             )}
 
-            <div className="grid gap-4">
+            <div className="grid gap-3 pt-2">
               {config.bgShape === 'square' && (
-                <div className="p-2.5 rounded-md bg-slate-50 border border-slate-100 space-y-2">
-                  <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                    <span>Radius</span>
-                    <span>{config.borderRadius}px</span>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Border Radius</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.borderRadius}px</span>
                   </div>
                   <Slider 
                     value={[config.borderRadius]} 
                     min={0} 
                     max={256} 
                     step={1} 
+                    className="py-2"
                     onValueChange={(val) => {
                       const value = Array.isArray(val) ? val[0] : val;
                       updateConfig({ borderRadius: value });
@@ -312,16 +328,17 @@ export function Editor({ config, onChange }: EditorProps) {
                 </div>
               )}
               
-              <div className="p-2.5 rounded-md bg-slate-50 border border-slate-100 space-y-2">
-                <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                  <span>Padding</span>
-                  <span>{config.bgPadding}px</span>
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inner Padding</span>
+                  <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.bgPadding}px</span>
                 </div>
                 <Slider 
                   value={[config.bgPadding]} 
                   min={0} 
                   max={128} 
                   step={1} 
+                  className="py-2"
                   onValueChange={(val) => {
                     const value = Array.isArray(val) ? val[0] : val;
                     updateConfig({ bgPadding: value });
@@ -332,39 +349,48 @@ export function Editor({ config, onChange }: EditorProps) {
           </div>
         </section>
 
-        <Separator className="opacity-50" />
+        <Separator className="opacity-40" />
 
         <section className="space-y-4">
-          <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Effects</label>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Effects & Depth</label>
+            <button 
+              onClick={() => updateConfig({ shadowEnabled: true, shadowBlur: 10, shadowX: 0, shadowY: 4 })}
+              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+            >
+              Reset
+            </button>
+          </div>
           
           <div className="space-y-3">
-             <div className="flex items-center justify-between p-2 px-3 rounded-md bg-slate-50 border border-slate-100">
-              <Label className="text-[11px] font-medium text-slate-600">Shadow</Label>
+             <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
+              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Drop Shadow</Label>
               <Switch 
                 checked={config.shadowEnabled} 
                 onCheckedChange={(checked) => updateConfig({ shadowEnabled: checked })} 
-                className="scale-90"
+                className="scale-90 data-[state=checked]:bg-indigo-600"
               />
             </div>
 
             {config.shadowEnabled && (
-              <div className="p-3 rounded-md bg-indigo-50/50 border border-indigo-100 space-y-4">
+              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-5 animate-in fade-in zoom-in-95 duration-200">
                 <ColorField 
                   label="Shadow Color" 
                   value={config.shadowColor} 
                   onChange={(c) => updateConfig({ shadowColor: c })} 
                 />
                 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] text-slate-400 font-bold tracking-tighter">
-                    <span>BLUR</span>
-                    <span>{config.shadowBlur}px</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Blur Strength</span>
+                    <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.shadowBlur}px</span>
                   </div>
                   <Slider 
                     value={[config.shadowBlur]} 
                     min={0} 
                     max={50} 
                     step={1} 
+                    className="py-1"
                     onValueChange={(val) => {
                       const value = Array.isArray(val) ? val[0] : val;
                       updateConfig({ shadowBlur: value });
@@ -372,27 +398,29 @@ export function Editor({ config, onChange }: EditorProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">X-OFFSET</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">X Offset</div>
                     <Slider 
                       value={[config.shadowX]} 
                       min={-25} 
                       max={25} 
                       step={1} 
+                      className="py-1"
                       onValueChange={(val) => {
                         const value = Array.isArray(val) ? val[0] : val;
                         updateConfig({ shadowX: value });
                       }}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Y-OFFSET</div>
+                  <div className="space-y-3">
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Y Offset</div>
                     <Slider 
                       value={[config.shadowY]} 
                       min={-25} 
                       max={25} 
                       step={1} 
+                      className="py-1"
                       onValueChange={(val) => {
                         const value = Array.isArray(val) ? val[0] : val;
                         updateConfig({ shadowY: value });

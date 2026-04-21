@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   Sparkles, 
   Settings2, 
@@ -141,42 +142,53 @@ export default function App() {
     <TooltipProvider>
       <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden">
         {/* Header */}
-        <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 shrink-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-6 shrink-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+          <div className="flex items-center gap-4">
+            <motion.div 
+              initial={{ rotate: -10, scale: 0.9 }}
+              animate={{ rotate: 0, scale: 1 }}
+              className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100"
+            >
               <Palette className="w-5 h-5 text-white" />
+            </motion.div>
+            <div className="flex flex-col">
+              <h1 className="text-sm font-bold tracking-tight font-display">IconCraft <span className="text-slate-400 font-normal">Studio v2</span></h1>
+              <div className="flex items-center gap-1.5 overflow-hidden">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Local Session Sync</span>
+              </div>
             </div>
-            <h1 className="text-lg font-bold tracking-tight">IconCraft <span className="text-slate-400 font-normal">Studio</span></h1>
             {iconSet.length > 1 && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100/50">
                 <Layers className="h-3 w-3 text-indigo-500" />
                 <span className="text-[10px] font-bold text-indigo-600 uppercase">Set: {iconSet.length}</span>
               </div>
             )}
           </div>
           
-          <div className="flex items-center gap-4 text-xs font-medium">
-            <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-md border border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center bg-slate-100/80 p-1 rounded-lg border border-slate-200/60">
               <button 
                 onClick={() => setLeftTab('library')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded transition-all ${leftTab === 'library' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-bold tracking-tight transition-all duration-200 ${leftTab === 'library' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <Library className="h-3 w-3" /> Library
+                <Library className="h-3.5 w-3.5" /> Thư viện
               </button>
               <button 
                 onClick={() => setLeftTab('design')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded transition-all ${leftTab === 'design' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-bold tracking-tight transition-all duration-200 ${leftTab === 'design' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <Palette className="h-3 w-3" /> Design
+                <Palette className="h-3.5 w-3.5" /> Thiết kế
               </button>
             </div>
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-700 h-8 text-xs px-4">
-              <DownloadIcon className="h-3 w-3 mr-2" /> Export Pack
+            <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block" />
+            <Button className="bg-slate-900 text-white hover:bg-slate-800 h-9 text-xs px-5 rounded-lg shadow-md transition-all active:scale-95">
+              <DownloadIcon className="h-3.5 w-3.5 mr-2" /> Export Pack
             </Button>
           </div>
         </header>
 
-        <main className="flex flex-1 min-h-0 overflow-hidden">
+        <main className="flex flex-1 min-h-0 overflow-hidden relative">
           {/* Left Sidebar: Library or Design */}
           <aside className="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white shrink-0 overflow-hidden">
             <div className="flex-1 overflow-hidden flex flex-col">
@@ -194,23 +206,35 @@ export default function App() {
           </aside>
 
           {/* Central Section: Preview */}
-          <section className="flex-1 bg-slate-100 flex flex-col min-w-0 overflow-hidden">
-            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-              <div className="absolute inset-0 opacity-5" 
-                style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }} 
-              />
+          <section className="flex-1 studio-grid flex flex-col min-w-0 overflow-hidden relative">
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none" />
+            
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-10 overflow-auto high-density-scrollbar">
               <div className="relative group">
-                <div className="absolute inset-0 bg-white opacity-20 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                <div className="relative z-10 transition-transform duration-500 hover:scale-105">
+                <div className="absolute inset-x-0 -bottom-12 flex justify-center">
+                   <div className="bg-white/80 backdrop-blur border border-slate-200/50 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Draft Viewport</span>
+                      <Separator orientation="vertical" className="h-2" />
+                      <span className="text-[10px] font-mono text-indigo-600">512×512</span>
+                   </div>
+                </div>
+                <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02]">
                   <Preview config={config} svgContent={primarySvgContent} iconSet={fullIconSet} hideMockups />
                 </div>
               </div>
             </div>
 
             {/* Bottom Tray: Mockups */}
-            <div className="h-48 border-t border-slate-200 bg-white/50 backdrop-blur-sm p-4 overflow-x-auto high-density-scrollbar">
-              <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-3 block">System Previews</label>
-              <div className="h-full">
+            <div className="h-44 border-t border-slate-200/60 bg-white/70 backdrop-blur-md p-4 overflow-hidden flex flex-col shrink-0">
+              <div className="flex items-center justify-between mb-3 px-2">
+                <label className="text-[9px] uppercase font-bold text-slate-400 tracking-widest block">System Context Previews</label>
+                <div className="flex items-center gap-1">
+                   <div className="h-1 w-8 bg-indigo-500 rounded-full" />
+                   <div className="h-1 w-2 bg-slate-200 rounded-full" />
+                   <div className="h-1 w-2 bg-slate-200 rounded-full" />
+                </div>
+              </div>
+              <div className="flex-1 overflow-x-auto high-density-scrollbar pb-2 px-2">
                 <Preview config={config} svgContent={primarySvgContent} iconSet={fullIconSet} onlyMockups />
               </div>
             </div>

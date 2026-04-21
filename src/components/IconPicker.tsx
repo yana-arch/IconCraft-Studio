@@ -224,30 +224,30 @@ export function IconPicker({ onSelect, onSetSelect, selectedIconName, currentSet
             <p className="text-[10px] text-slate-400">Input keywords above to start selecting your icons sequentially.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-5 gap-2">
             {results.map((icon) => {
               const fullId = `${icon.set}:${icon.name}`;
               const isSelected = fullId === selectedIconName;
               return (
                   <button
                     key={fullId}
-                    className={`h-10 w-10 p-0 flex items-center justify-center rounded-md border transition-all relative group ${
+                    className={`h-11 w-11 p-0 flex items-center justify-center rounded-xl border transition-all relative group shadow-sm active:scale-95 ${
                       isSelected 
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-600 ring-1 ring-indigo-500' 
-                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-600 ring-2 ring-indigo-500/20' 
+                        : 'bg-white border-slate-200/60 hover:border-slate-300 hover:shadow-md text-slate-600'
                     }`}
                     onClick={() => handleIconClick(icon.name, icon.set)}
                   >
-                    <Icon icon={fullId} className="h-5 w-5" />
+                    <Icon icon={fullId} className="h-6 w-6" />
                     {mode === 'single' && !isSelected && (
                       <div 
-                        className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-600 text-white rounded-full p-0.5 shadow-sm"
+                        className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 bg-slate-900 text-white rounded-lg p-1 shadow-lg ring-4 ring-white"
                         onClick={(e) => {
                           e.stopPropagation();
                           onSetSelect([...currentSet, { id: fullId, name: icon.name, set: icon.set }]);
                         }}
                       >
-                        <ListPlus className="h-2.5 w-2.5" />
+                        <ListPlus className="h-3 w-3" />
                       </div>
                     )}
                   </button>
