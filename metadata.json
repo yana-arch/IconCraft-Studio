@@ -1,0 +1,8 @@
+{
+  "name": "IconCraft Studio",
+  "description": "Professional icon set generator for Web, Windows, Linux, and Mobile. Customize icons from major libraries with gradients, backgrounds, and export to multiple formats.",
+  "requestFramePermissions": [
+    "download"
+  ],
+  "majorCapabilities": []
+}
