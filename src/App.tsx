@@ -342,7 +342,13 @@ export default function App() {
                    </div>
                 </div>
                 <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02] icon-preview-main">
-                  <Preview config={config} svgContent={primarySvgContent} iconSet={fullIconSet} hideMockups />
+                  <Preview 
+                    config={config} 
+                    svgContent={primarySvgContent} 
+                    iconSet={fullIconSet} 
+                    hideMockups 
+                    onSelect={(id, name, set) => setConfig(prev => ({ ...prev, id, iconName: name, iconSet: set }))}
+                  />
                 </div>
               </div>
             </div>

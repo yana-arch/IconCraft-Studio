@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from '@iconify/react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Monitor, Smartphone, Globe, Folder, Search } from 'lucide-react';
 import { IconConfig, IconSetItem } from '../types';
 import { getGradientCss, getBackgroundPath, getSvgGradientDef } from '../lib/icon-utils';
@@ -10,26 +10,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 interface PreviewProps {
   config: IconConfig;
   svgContent: string;
-  iconSet?: IconSetItem[];
+  iconSet?: (IconSetItem & { svgContent?: string })[];
   hideMockups?: boolean;
   onlyMockups?: boolean;
+  onSelect?: (id: string, name: string, set: string) => void;
 }
 
-export function Preview({ config, svgContent, iconSet, hideMockups = false, onlyMockups = false }: PreviewProps) {
+export function Preview({ config, svgContent, iconSet, hideMockups = false, onlyMockups = false, onSelect }: PreviewProps) {
   const primaryIconFullId = `${config.iconSet}:${config.iconName}`;
   
-  const IconLayer = ({ fullId = primaryIconFullId, className = "", itemSvg }: { fullId?: string; className?: string; itemSvg?: string }) => {
+  // Logic to identify main and floating icons
+  const activeIconId = config.id;
+  const mainIcon = iconSet?.find(i => i.id === activeIconId) || { id: activeIconId, name: config.iconName, set: config.iconSet, svgContent };
+  const otherIcons = iconSet 
+    ? [...iconSet].filter(i => i.id !== activeIconId).sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+
+  const IconLayer = ({ fullId = primaryIconFullId, className = "", itemSvg, size = "100%" }: { fullId?: string; className?: string; itemSvg?: string; size?: string | number }) => {
     const currentSvgBody = itemSvg || svgContent || '';
     const iconGradId = `icon-preview-grad-${Math.random().toString(36).substr(2, 9)}`;
     const iconGradDef = config.iconUseGradient ? getSvgGradientDef(iconGradId, config.iconGradient) : '';
     const iconColor = config.iconUseGradient ? `url(#${iconGradId})` : config.iconColor;
 
+    const sizeValue = typeof size === 'number' ? `${size}px` : size;
+
     return (
       <div 
         className={`flex items-center justify-center overflow-hidden relative ${className}`}
         style={{
-          width: '100%',
-          height: '100%',
+          width: sizeValue,
+          height: sizeValue,
           backgroundColor: !config.bgUseGradient ? config.bgColor : undefined,
           backgroundImage: config.bgUseGradient ? getGradientCss(config.bgGradient) : undefined,
           borderRadius: config.bgShape === 'square' ? `${config.borderRadius}px` : 
@@ -126,35 +136,80 @@ export function Preview({ config, svgContent, iconSet, hideMockups = false, only
     );
   }
 
+  const midPoint = Math.ceil(otherIcons.length / 2);
+  const leftIcons = otherIcons.slice(0, midPoint);
+  const rightIcons = otherIcons.slice(midPoint);
+
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-full">
-      {iconSet && iconSet.length > 1 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
-          {iconSet.map((item, idx) => (
-            <motion.div 
+    <div className="flex flex-col md:flex-row w-full h-full min-h-[450px] items-center justify-center p-4 gap-8">
+      {/* Left Wing */}
+      {iconSet && iconSet.length > 1 && (
+        <div className="hidden lg:flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+          {leftIcons.map((item) => (
+            <button
               key={item.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.05 }}
-              className="flex flex-col items-center gap-3"
+              onClick={() => onSelect?.(item.id, item.name, item.set)}
+              className="group relative transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105"
             >
-              <div className="w-32 h-32">
-                <IconLayer fullId={item.id} itemSvg={item.svgContent} />
+              <IconLayer size={56} fullId={item.id} itemSvg={item.svgContent} className="rounded-lg shadow-sm border border-slate-100" />
+              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-900 text-white text-[8px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none uppercase font-bold">
+                {item.name}
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase truncate max-w-[100px]">{item.name}</span>
-            </motion.div>
+            </button>
           ))}
         </div>
-      ) : (
-        <motion.div 
-          layout
-          className="w-48 h-48 sm:w-64 sm:h-64 z-10"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 20 }}
-        >
-          <IconLayer />
-        </motion.div>
+      )}
+
+      {/* Main Focus Stage */}
+      <div className="flex-1 flex flex-col items-center justify-center relative min-w-[280px]">
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={activeIconId}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-56 h-56 sm:w-72 sm:h-72"
+          >
+            <IconLayer className="shadow-2xl" />
+            <p className="text-center mt-6 text-[10px] font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-[0.2em] inline-block left-1/2 relative -translate-x-1/2 border border-slate-200">
+              {config.iconName}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Mobile/Small Screen List */}
+        {iconSet && iconSet.length > 1 && (
+          <div className="flex lg:hidden flex-wrap justify-center gap-3 mt-12 pt-6 border-t border-slate-100 w-full">
+            {otherIcons.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onSelect?.(item.id, item.name, item.set)}
+                className="opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <IconLayer size={44} fullId={item.id} itemSvg={item.svgContent} className="rounded shadow-sm" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Right Wing */}
+      {iconSet && iconSet.length > 1 && (
+        <div className="hidden lg:flex flex-col gap-4 max-h-[400px] overflow-y-auto pl-2 no-scrollbar">
+          {rightIcons.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onSelect?.(item.id, item.name, item.set)}
+              className="group relative transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105"
+            >
+              <IconLayer size={56} fullId={item.id} itemSvg={item.svgContent} className="rounded-lg shadow-sm border border-slate-100" />
+              <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-900 text-white text-[8px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none uppercase font-bold">
+                {item.name}
+              </div>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
