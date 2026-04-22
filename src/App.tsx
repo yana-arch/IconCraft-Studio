@@ -17,7 +17,10 @@ import {
   Layers,
   Monitor,
   CheckCircle2,
-  Library
+  Library,
+  Code2,
+  Copy,
+  Terminal
 } from 'lucide-react';
 import { IconConfig, IconSetItem, PRESET_GRADIENTS } from './types';
 import { IconPicker } from './components/IconPicker';
@@ -27,6 +30,9 @@ import { ExportPanel } from './components/ExportPanel';
 import { Button } from './components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
 import { Separator } from './components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { ScrollArea } from './components/ui/scroll-area';
 
 const INITIAL_CONFIG: IconConfig = {
   id: 'initial',
@@ -63,6 +69,7 @@ export default function App() {
   const [leftTab, setLeftTab] = useState<'library' | 'design'>('library');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stageTheme, setStageTheme] = useState<'light' | 'dark' | 'grid' | 'mesh'>('grid');
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   // Persistence
   useEffect(() => {
@@ -189,6 +196,11 @@ export default function App() {
     svgContent: svgContents[item.id] || ''
   }));
 
+  const getFullSvgSource = () => {
+    const svgEl = document.querySelector('.icon-preview-main svg');
+    return svgEl ? svgEl.outerHTML : '';
+  };
+
   return (
     <TooltipProvider>
       <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden">
@@ -249,7 +261,19 @@ export default function App() {
               </button>
             </div>
             <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block" />
-            <Button className="bg-slate-900 text-white hover:bg-slate-800 h-9 text-xs px-5 rounded-lg shadow-md transition-all active:scale-95">
+            <button 
+              onClick={() => setIsInspectorOpen(true)}
+              className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-slate-500"
+            >
+              <Code2 className="h-4 w-4" />
+            </button>
+            <Button 
+              className="bg-indigo-600 text-white hover:bg-indigo-700 h-9 text-xs px-5 rounded-lg shadow-md transition-all active:scale-95"
+              onClick={() => {
+                const ep = document.querySelector('.export-panel-btn');
+                (ep as HTMLElement)?.click();
+              }}
+            >
               <DownloadIcon className="h-3.5 w-3.5 mr-2" /> Export Pack
             </Button>
           </div>
@@ -257,7 +281,7 @@ export default function App() {
 
         <main className="flex flex-1 min-h-0 overflow-hidden relative">
           {/* Left Sidebar: Library or Design */}
-          <aside className="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white shrink-0 overflow-hidden">
+          <aside className="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white shadow-sm shrink-0 overflow-hidden z-10">
             <div className="flex-1 overflow-hidden flex flex-col relative">
               <AnimatePresence mode="wait">
                 {leftTab === 'library' ? (
@@ -266,6 +290,7 @@ export default function App() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
                     className="flex-1 overflow-hidden flex flex-col"
                   >
                     <IconPicker 
@@ -281,6 +306,7 @@ export default function App() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
                     className="flex-1 overflow-hidden flex flex-col"
                   >
                     <Editor config={config} onChange={setConfig} />
@@ -291,25 +317,20 @@ export default function App() {
           </aside>
 
           {/* Central Section: Preview */}
-          <section className={`flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-500 ${
+          <section className={`flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-700 ${
             stageTheme === 'dark' ? 'bg-slate-900' : 
             stageTheme === 'light' ? 'bg-white' : 
-            stageTheme === 'mesh' ? 'bg-indigo-500' : 'bg-slate-50'
+            stageTheme === 'mesh' ? 'mesh-gradient' : 'bg-slate-50'
           }`}>
-            {stageTheme === 'grid' && <div className="absolute inset-0 studio-grid pointer-events-none" />}
-            {stageTheme === 'mesh' && (
-              <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ 
-                backgroundImage: 'radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%)' 
-              }} />
-            )}
+            {stageTheme === 'grid' && <div className="absolute inset-0 studio-grid pointer-events-none opacity-40" />}
             
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center bg-white/80 backdrop-blur border border-slate-200/50 p-1 rounded-full shadow-sm">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex items-center bg-white/70 glass-card p-1 rounded-full shadow-lg">
               {(['light', 'dark', 'grid', 'mesh'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setStageTheme(t)}
-                  className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${
-                    stageTheme === t ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${
+                    stageTheme === t ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
                   {t}
@@ -319,29 +340,29 @@ export default function App() {
 
             <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-10 overflow-auto high-density-scrollbar">
               <div className="relative group">
-                <div className="absolute inset-x-0 -bottom-16 flex flex-col items-center gap-3">
-                   <div className="bg-white/80 backdrop-blur border border-slate-200/50 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Draft Viewport</span>
-                      <Separator orientation="vertical" className="h-2" />
-                      <span className="text-[10px] font-mono text-indigo-600">512×512</span>
+                <div className="absolute inset-x-0 -bottom-20 flex flex-col items-center gap-3">
+                   <div className="glass-card px-4 py-1.5 rounded-full flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Viewport</span>
+                      <Separator orientation="vertical" className="h-2.5 mx-1" />
+                      <span className="text-[10px] font-mono font-bold text-indigo-600">512×512</span>
                    </div>
-                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all delay-75 translate-y-2 group-hover:translate-y-0">
+                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-2 group-hover:translate-y-0">
                      <Button 
                        variant="secondary" 
                        size="sm" 
-                       className="h-8 rounded-full bg-white shadow-sm border-slate-200 text-[10px] uppercase font-bold"
+                       className="h-8 rounded-full bg-white shadow-sm border-slate-200 text-[10px] uppercase font-black tracking-widest px-6"
                        onClick={() => {
-                         const svg = document.querySelector('.icon-preview-main svg');
+                         const svg = getFullSvgSource();
                          if (svg) {
-                           navigator.clipboard.writeText(svg.outerHTML);
+                           navigator.clipboard.writeText(svg);
                          }
                        }}
                      >
-                       Copy SVG
+                       <Copy className="h-3 w-3 mr-2" /> Copy Raw SVG
                      </Button>
                    </div>
                 </div>
-                <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02] icon-preview-main">
+                <div className="relative z-10 transition-transform duration-500 hover:scale-[1.01] icon-preview-main">
                   <Preview 
                     config={config} 
                     svgContent={primarySvgContent} 
@@ -354,64 +375,67 @@ export default function App() {
             </div>
 
             {/* Bottom Tray: Mockups */}
-            <div className="h-44 border-t border-slate-200/60 bg-white/70 backdrop-blur-md p-4 overflow-hidden flex flex-col shrink-0">
-              <div className="flex items-center justify-between mb-3 px-2">
-                <label className="text-[9px] uppercase font-bold text-slate-400 tracking-widest block">System Context Previews</label>
-                <div className="flex items-center gap-1">
-                   <div className="h-1 w-8 bg-indigo-500 rounded-full" />
+            <div className="h-48 border-t border-slate-200/60 bg-white/70 glass-card p-5 overflow-hidden flex flex-col shrink-0 z-10 rounded-t-3xl">
+              <div className="flex items-center justify-between mb-4 px-2">
+                <div className="flex items-center gap-2">
+                  <Monitor className="h-3.5 w-3.5 text-indigo-600" />
+                  <label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] block">System Contexts</label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                   <div className="h-1 w-10 bg-indigo-600 rounded-full" />
                    <div className="h-1 w-2 bg-slate-200 rounded-full" />
                    <div className="h-1 w-2 bg-slate-200 rounded-full" />
                 </div>
               </div>
-              <div className="flex-1 overflow-x-auto high-density-scrollbar pb-2 px-2">
+              <div className="flex-1 overflow-x-auto high-density-scrollbar pb-2 px-2 scroll-smooth">
                 <Preview config={config} svgContent={primarySvgContent} iconSet={fullIconSet} onlyMockups />
               </div>
             </div>
           </section>
 
           {/* Right Sidebar: Export Settings */}
-          <aside className="hidden xl:flex w-80 border-l border-slate-200 bg-white flex-col shrink-0 overflow-y-auto high-density-scrollbar">
+          <aside className="hidden xl:flex w-80 border-l border-slate-200 bg-white flex-col shrink-0 overflow-y-auto high-density-scrollbar shadow-sm z-10">
              <div className="p-0">
                 <ExportPanel config={config} svgContent={primarySvgContent} iconSet={fullIconSet} />
              </div>
              
-             <div className="p-4 border-t border-slate-100 flex flex-col gap-4 overflow-hidden">
+             <div className="p-5 border-t border-slate-100 flex flex-col gap-5">
                <div className="flex items-center justify-between">
                  <div className="flex flex-col gap-0.5">
-                   <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Assets in Pack</label>
-                   <span className="text-[9px] text-slate-400 font-medium">Click to select active icon</span>
+                   <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider block">Production Queue</label>
+                   <span className="text-[9px] text-slate-400 font-medium">Batch processing ready</span>
                  </div>
                  {iconSet.length > 1 && (
                    <button 
                      onClick={clearSet}
-                     className="text-[9px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded transition-colors uppercase tracking-tighter"
+                     className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors uppercase tracking-tighter"
                    >
-                     Reset Set
+                     Reset Bundle
                    </button>
                  )}
                </div>
-               <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto high-density-scrollbar pb-2">
+               <div className="flex flex-wrap gap-2.5 max-h-64 overflow-y-auto high-density-scrollbar pb-2">
                  {iconSet.map((item, idx) => (
                    <motion.div 
                      key={idx} 
                      layout
-                     initial={{ opacity: 0, x: -10 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     className={`group h-10 pl-2 pr-1 rounded-xl border flex items-center gap-2 transition-all cursor-pointer ${
+                     initial={{ opacity: 0, scale: 0.95 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     className={`group h-12 pl-3 pr-2 rounded-2xl border flex items-center gap-3 transition-all cursor-pointer ${
                        config.id === item.id 
-                       ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-200' 
-                       : 'bg-white border-slate-200 hover:border-slate-300'
+                       ? 'bg-indigo-50 border-indigo-200 shadow-md ring-2 ring-indigo-200/50' 
+                       : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
                      }`}
                      onClick={() => setConfig(prev => ({ ...prev, iconName: item.name, iconSet: item.set, id: item.id }))}
                    >
-                     <div className="w-6 h-6 bg-slate-100 rounded-md flex items-center justify-center overflow-hidden shrink-0">
+                     <div className="w-8 h-8 bg-white rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                         {svgContents[item.id] ? (
-                          <svg viewBox="0 0 24 24" className="w-4 h-4 text-slate-600" dangerouslySetInnerHTML={{ __html: svgContents[item.id] }} />
+                          <svg viewBox="0 0 24 24" className="w-5 h-5 text-slate-600" dangerouslySetInnerHTML={{ __html: svgContents[item.id] }} />
                         ) : (
-                          <Layers className="w-3 h-3 text-slate-400" />
+                          <Layers className="w-4 h-4 text-slate-400" />
                         )}
                      </div>
-                     <span className={`text-[10px] font-bold truncate max-w-[70px] ${config.id === item.id ? 'text-indigo-700' : 'text-slate-600'}`}>
+                     <span className={`text-[11px] font-bold truncate max-w-[80px] ${config.id === item.id ? 'text-indigo-700' : 'text-slate-600'}`}>
                        {item.name}
                      </span>
                      {iconSet.length > 1 && (
@@ -420,9 +444,9 @@ export default function App() {
                            e.stopPropagation();
                            removeItem(item.id);
                          }}
-                         className="p-1 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all"
+                         className="p-1.5 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 rounded-xl hover:bg-white shadow-sm transition-all"
                        >
-                         <X className="h-2.5 w-2.5" />
+                         <X className="h-3 w-3" />
                        </button>
                      )}
                    </motion.div>
@@ -430,35 +454,123 @@ export default function App() {
                </div>
              </div>
 
-             <div className="mt-auto p-4 border-t border-slate-100 bg-slate-50/50">
-               <div className="flex flex-col gap-2">
-                 <div className="flex justify-between text-[11px]">
-                   <span className="text-slate-500">Icons in set:</span>
-                   <span className="font-bold">{iconSet.length}</span>
+             <div className="mt-auto p-5 border-t border-slate-100 bg-slate-50/50">
+               <div className="flex flex-col gap-3">
+                 <div className="flex justify-between items-center text-[11px]">
+                   <span className="text-slate-400 uppercase font-black tracking-widest text-[9px]">Inventory Size</span>
+                   <span className="font-bold text-slate-900 bg-white border px-2 py-0.5 rounded-md">{iconSet.length} Assets</span>
                  </div>
-                 <div className="flex justify-between text-[11px]">
-                   <span className="text-slate-500">Packaging:</span>
-                   <span className="font-bold text-indigo-600">Sync Styles</span>
+                 <div className="flex justify-between items-center text-[11px]">
+                   <span className="text-slate-400 uppercase font-black tracking-widest text-[9px]">Styles</span>
+                   <span className="font-black text-indigo-600">Synchronized</span>
                  </div>
                </div>
              </div>
           </aside>
         </main>
+
+        {/* Code Inspector Dialog */}
+        <Dialog open={isInspectorOpen} onOpenChange={setIsInspectorOpen}>
+           <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 overflow-hidden rounded-3xl border-none">
+              <DialogHeader className="p-6 pb-2 shrink-0">
+                 <DialogTitle className="flex items-center gap-2 text-lg font-black uppercase tracking-widest">
+                    <Terminal className="h-5 w-5 text-indigo-600" />
+                    Asset Source Inspector
+                 </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-hidden p-6 pt-0">
+                 <Tabs defaultValue="svg" className="h-full flex flex-col">
+                    <TabsList className="w-full justify-start bg-slate-100 p-1 rounded-xl gap-1 mb-4 h-12">
+                       <TabsTrigger value="svg" className="flex-1 h-10 rounded-lg text-xs font-black uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">SVG Source</TabsTrigger>
+                       <TabsTrigger value="react" className="flex-1 h-10 rounded-lg text-xs font-black uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">React Component</TabsTrigger>
+                       <TabsTrigger value="tailwind" className="flex-1 h-10 rounded-lg text-xs font-black uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">Tailwind Snippet</TabsTrigger>
+                    </TabsList>
+                    
+                    <div className="flex-1 overflow-hidden bg-slate-900 rounded-2xl relative shadow-2xl">
+                       <TabsContent value="svg" className="h-full m-0">
+                          <ScrollArea className="h-full p-6">
+                             <pre className="text-[11px] font-mono text-indigo-300 leading-relaxed break-all whitespace-pre-wrap">
+                                {getFullSvgSource()}
+                             </pre>
+                          </ScrollArea>
+                       </TabsContent>
+                       <TabsContent value="react" className="h-full m-0">
+                          <ScrollArea className="h-full p-6">
+                             <pre className="text-[11px] font-mono text-indigo-300 leading-relaxed break-all whitespace-pre-wrap">
+{`import React from 'react';
+
+export function CustomIcon(props) {
+  return (
+    ${getFullSvgSource()
+      .replace(/class=/g, 'className=')
+      .replace(/fill-opacity=/g, 'fillOpacity=')
+      .replace(/stroke-width=/g, 'strokeWidth=')
+      .replace(/stroke-linecap=/g, 'strokeLinecap=')
+      .replace(/stroke-linejoin=/g, 'strokeLinejoin=')
+      .replace(/<svg/, '<svg {...props}')}
+  );
+}`}
+                             </pre>
+                          </ScrollArea>
+                       </TabsContent>
+                       <TabsContent value="tailwind" className="h-full m-0">
+                          <ScrollArea className="h-full p-6">
+                             <pre className="text-[11px] font-mono text-indigo-300 leading-relaxed break-all whitespace-pre-wrap">
+{`<div className="w-64 h-64 flex items-center justify-center p-4">
+  ${getFullSvgSource()}
+</div>`}
+                             </pre>
+                          </ScrollArea>
+                       </TabsContent>
+                       
+                       <Button 
+                          className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest h-10 px-6 rounded-xl shadow-xl"
+                          onClick={() => {
+                             const active = document.querySelector('[data-state="active"].flex-1');
+                             const tab = active?.getAttribute('value');
+                             let text = getFullSvgSource();
+                             if (tab === 'react') text = `import React from 'react';\n\nexport function CustomIcon(props) {\n  return (\n    ${text.replace(/class=/g, 'className=')}\n  );\n}`;
+                             if (tab === 'tailwind') text = `<div className="w-64 h-64 flex items-center justify-center p-4">\n  ${text}\n</div>`;
+                             navigator.clipboard.writeText(text);
+                          }}
+                       >
+                          <Copy className="h-3.5 w-3.5 mr-2" /> Copy to Clipboard
+                       </Button>
+                    </div>
+                 </Tabs>
+              </div>
+           </DialogContent>
+        </Dialog>
+
+        {/* Hidden Trigger for Export */}
+        <div 
+          className="export-panel-btn hidden" 
+          onClick={() => {
+            const btn = document.querySelector('button[class*="bg-indigo-600"][class*="w-full"]');
+            (btn as HTMLButtonElement)?.click();
+          }} 
+        />
       </div>
 
       {/* Mobile Footer Nav (Simplified for Density) */}
-      <nav className="lg:hidden fixed bottom-14 left-0 right-0 h-14 bg-white border-t flex items-center justify-around px-4 z-40">
-        <button onClick={() => setLeftTab('library')} className={`p-2 transition-colors ${leftTab === 'library' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Library className="h-5 w-5" />
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t flex items-center justify-around px-4 z-40 shadow-2xl">
+        <button onClick={() => setLeftTab('library')} className={`p-3 transition-all ${leftTab === 'library' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
+          <Library className="h-6 w-6" />
         </button>
-        <button onClick={() => setLeftTab('design')} className={`p-2 transition-colors ${leftTab === 'design' ? 'text-indigo-600' : 'text-slate-400'}`}>
-          <Palette className="h-5 w-5" />
+        <button onClick={() => setLeftTab('design')} className={`p-3 transition-all ${leftTab === 'design' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
+          <Palette className="h-6 w-6" />
         </button>
-        <button className="p-2 text-slate-400">
-          <Eye className="h-5 w-5" />
+        <button onClick={() => setIsInspectorOpen(true)} className="p-3 text-slate-400">
+          <Code2 className="h-6 w-6" />
         </button>
-        <button className="p-2 text-slate-400">
-          <DownloadIcon className="h-5 w-5" />
+        <button 
+          onClick={() => {
+            const btn = document.querySelector('button[class*="bg-indigo-600"][class*="w-full"]');
+            (btn as HTMLButtonElement)?.click();
+          }} 
+          className="p-3 text-indigo-600"
+        >
+          <DownloadIcon className="h-6 w-6" />
         </button>
       </nav>
     </TooltipProvider>

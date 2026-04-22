@@ -31,9 +31,30 @@ interface EditorProps {
   onChange: (config: IconConfig) => void;
 }
 
+const BRAND_PALETTES = [
+  { name: 'Cyberpunk', bg: '#0f172a', icon: '#22d3ee', grad: PRESET_GRADIENTS[0] },
+  { name: 'Organic', bg: '#f0fdf4', icon: '#166534', grad: PRESET_GRADIENTS[1] },
+  { name: 'Luxury', bg: '#fafaf9', icon: '#a16207', grad: PRESET_GRADIENTS[2] },
+  { name: 'Deep Sea', bg: '#0c4a6e', icon: '#e0f2fe', grad: PRESET_GRADIENTS[4] },
+  { name: 'Sunset', bg: '#fff7ed', icon: '#ea580c', grad: PRESET_GRADIENTS[3] },
+  { name: 'Soft Candy', bg: '#fdf2f8', icon: '#be185d', grad: PRESET_GRADIENTS[5] },
+];
+
 export function Editor({ config, onChange }: EditorProps) {
   const updateConfig = (updates: Partial<IconConfig>) => {
     onChange({ ...config, ...updates });
+  };
+
+  const applyPalette = (p: typeof BRAND_PALETTES[0]) => {
+    updateConfig({
+      bgColor: p.bg,
+      iconColor: p.icon,
+      bgUseGradient: false,
+      iconUseGradient: true,
+      iconGradient: p.grad,
+      shadowEnabled: true,
+      shadowColor: 'rgba(0,0,0,0.1)',
+    });
   };
 
   const ColorField = ({ label, value, onChange }: { label: string; value: string; onChange: (val: string) => void }) => (
@@ -175,22 +196,59 @@ export function Editor({ config, onChange }: EditorProps) {
   );
 
   return (
-    <ScrollArea className="h-full high-density-scrollbar pb-16 lg:pb-0">
-      <div className="p-4 space-y-6">
+    <ScrollArea className="h-full high-density-scrollbar pb-20 lg:pb-0">
+      <div className="p-5 space-y-8">
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Icon Layer</label>
+          <div className="flex flex-col gap-0.5 px-1">
+            <label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] block">Style Express</label>
+            <span className="text-[9px] text-slate-400 font-medium">One-click thematic presets</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 high-density-scrollbar no-scrollbar">
+            {BRAND_PALETTES.map((p) => (
+              <button
+                key={p.name}
+                onClick={() => applyPalette(p)}
+                className="flex-shrink-0 group flex flex-col gap-2 items-center"
+              >
+                <div className="w-14 h-14 rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all group-hover:scale-105 group-hover:shadow-md group-active:scale-95 group-hover:border-indigo-200 relative">
+                   <div className="absolute inset-0" style={{ backgroundColor: p.bg }} />
+                   <div 
+                    className="absolute inset-4 rounded-lg flex items-center justify-center shadow-sm"
+                    style={{ background: p.grad.type === 'linear' ? `linear-gradient(${p.grad.angle}deg, ${p.grad.points[0].color}, ${p.grad.points[p.grad.points.length-1].color})` : `radial-gradient(circle, ${p.grad.points[0].color}, ${p.grad.points[p.grad.points.length-1].color})` }}
+                   >
+                     <Zap className="w-3 h-3 text-white" />
+                   </div>
+                </div>
+                <span className="text-[9px] font-black uppercase text-slate-400 group-hover:text-indigo-600 transition-colors tracking-tighter">
+                  {p.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-5">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] block">Icon Geometry</label>
+              <span className="text-[9px] text-slate-400 font-medium">Fine-tune path and scale</span>
+            </div>
             <button 
               onClick={() => updateConfig({ iconSize: 60, iconColor: '#ffffff', iconUseGradient: false, strokeWidth: 2 })}
-              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+              className="text-[9px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors uppercase tracking-widest px-2 py-1 rounded-md hover:bg-indigo-50"
             >
               Reset
             </button>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
-              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Use Gradient</Label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <Palette className="h-4 w-4 text-indigo-600" />
+                </div>
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-tight">Icon Gradient</Label>
+              </div>
               <Switch 
                 checked={config.iconUseGradient} 
                 onCheckedChange={(checked) => updateConfig({ iconUseGradient: checked })} 
@@ -199,25 +257,29 @@ export function Editor({ config, onChange }: EditorProps) {
             </div>
             
             {config.iconUseGradient ? (
-              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-2xl bg-indigo-50/30 border border-indigo-100/50 space-y-4 shadow-inner"
+              >
                 <GradientEditor 
-                  label="Icon Gradient" 
+                  label="Icon Color Palette" 
                   config={config.iconGradient} 
                   onChange={(g) => updateConfig({ iconGradient: g })} 
                 />
-              </div>
+              </motion.div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300 space-y-3">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:border-slate-300 space-y-4">
                 <ColorField 
-                  label="Icon Color" 
+                  label="Fill Color" 
                   value={config.iconColor} 
                   onChange={(c) => updateConfig({ iconColor: c })} 
                 />
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['#ffffff', '#000000', '#4f46e5', '#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#ec4899'].map(c => (
+                <div className="grid grid-cols-8 gap-1.5 pt-1">
+                  {['#ffffff', '#0f172a', '#6366f1', '#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#ec4899'].map(c => (
                     <button
                       key={c}
-                      className={`h-5 w-5 rounded-md border border-slate-200 shadow-sm transition-transform active:scale-90 ${config.iconColor === c ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}`}
+                      className={`h-6 w-full rounded-md border border-slate-200 shadow-sm transition-all active:scale-90 ${config.iconColor === c ? 'ring-2 ring-indigo-500 ring-offset-2 scale-110' : 'hover:scale-105'}`}
                       style={{ backgroundColor: c }}
                       onClick={() => updateConfig({ iconColor: c })}
                     />
@@ -226,10 +288,13 @@ export function Editor({ config, onChange }: EditorProps) {
               </div>
             )}
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm space-y-4 transition-all hover:border-slate-300">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Stroke / Weight</span>
-                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.strokeWidth}px</span>
+                <div className="flex items-center gap-2">
+                  <Type className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Stroke Weight</span>
+                </div>
+                <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-mono text-indigo-600 font-black">{config.strokeWidth}px</span>
               </div>
               <Slider 
                 value={[config.strokeWidth]} 
@@ -244,14 +309,17 @@ export function Editor({ config, onChange }: EditorProps) {
               />
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm space-y-4 transition-all hover:border-slate-300">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Icon Scale</span>
-                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.iconSize}%</span>
+                <div className="flex items-center gap-2">
+                  <Move className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Icon Scale</span>
+                </div>
+                <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-mono text-indigo-600 font-black">{config.iconSize}%</span>
               </div>
               <Slider 
                 value={[config.iconSize]} 
-                min={10} 
+                min={5} 
                 max={100} 
                 step={1} 
                 className="py-2"
@@ -264,20 +332,21 @@ export function Editor({ config, onChange }: EditorProps) {
           </div>
         </section>
 
-        <Separator className="opacity-40" />
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Background Layer</label>
+        <section className="space-y-5">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] block">Container Styling</label>
+              <span className="text-[9px] text-slate-400 font-medium">Shape, color and padding</span>
+            </div>
             <button 
               onClick={() => updateConfig({ bgShape: 'circle', bgPadding: 32, borderRadius: 16, bgUseGradient: true })}
-              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest px-2 py-1 rounded-md hover:bg-indigo-50"
             >
               Reset
             </button>
           </div>
           
-          <div className="grid grid-cols-5 gap-2 p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60 shadow-inner">
+          <div className="grid grid-cols-5 gap-2 p-2 bg-slate-100/50 rounded-2xl border border-slate-200 shadow-inner">
             {[
               { id: 'circle', icon: Circle, label: 'Circle' },
               { id: 'square', icon: Square, label: 'Square' },
@@ -288,26 +357,31 @@ export function Editor({ config, onChange }: EditorProps) {
               <div key={shape.id}>
                 <Tooltip>
                   <TooltipTrigger
-                    className={`h-9 w-full flex items-center justify-center rounded-lg transition-all transform active:scale-95 ${
+                    className={`h-10 w-full flex items-center justify-center rounded-xl transition-all ${
                       config.bgShape === shape.id 
-                      ? 'bg-white shadow-md ring-1 ring-slate-200 text-indigo-600 scale-105 z-10 font-bold' 
+                      ? 'bg-white shadow-lg text-indigo-600 scale-105 z-10 font-bold ring-1 ring-slate-200' 
                       : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                     }`}
                     onClick={() => updateConfig({ bgShape: shape.id as BackgroundShape })}
                   >
                     <shape.icon className="h-4 w-4" />
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-[10px] font-bold uppercase">{shape.label}</p>
+                  <TooltipContent side="bottom" className="text-[9px] font-black uppercase tracking-tighter">
+                    {shape.label}
                   </TooltipContent>
                 </Tooltip>
               </div>
             ))}
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
-              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Enable Gradient</Label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <Layers className="h-4 w-4 text-indigo-600" />
+                </div>
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-tight">Active Gradient</Label>
+              </div>
               <Switch 
                 checked={config.bgUseGradient} 
                 onCheckedChange={(checked) => updateConfig({ bgUseGradient: checked })} 
@@ -316,29 +390,33 @@ export function Editor({ config, onChange }: EditorProps) {
             </div>
             
             {config.bgUseGradient ? (
-              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-2xl bg-indigo-50/30 border border-indigo-100/50 space-y-4 shadow-inner"
+              >
                 <GradientEditor 
-                  label="Background Gradient" 
+                  label="Container Palette" 
                   config={config.bgGradient} 
                   onChange={(g) => updateConfig({ bgGradient: g })} 
                 />
-              </div>
+              </motion.div>
             ) : (
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:border-slate-300">
                 <ColorField 
-                  label="Solid Color" 
+                  label="Solid Background" 
                   value={config.bgColor} 
                   onChange={(c) => updateConfig({ bgColor: c })} 
                 />
               </div>
             )}
 
-            <div className="grid gap-3 pt-2">
+            <div className="grid gap-4">
               {config.bgShape === 'square' && (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm space-y-4 transition-all hover:border-slate-300">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Border Radius</span>
-                    <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.borderRadius}px</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Corner Radius</span>
+                    <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-mono text-indigo-600 font-black">{config.borderRadius}px</span>
                   </div>
                   <Slider 
                     value={[config.borderRadius]} 
@@ -354,10 +432,10 @@ export function Editor({ config, onChange }: EditorProps) {
                 </div>
               )}
               
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-3 transition-all hover:border-slate-300">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm space-y-4 transition-all hover:border-slate-300">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inner Padding</span>
-                  <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.bgPadding}px</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Safe Area Padding</span>
+                  <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-mono text-indigo-600 font-black">{config.bgPadding}px</span>
                 </div>
                 <Slider 
                   value={[config.bgPadding]} 
@@ -375,22 +453,28 @@ export function Editor({ config, onChange }: EditorProps) {
           </div>
         </section>
 
-        <Separator className="opacity-40" />
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Effects & Depth</label>
+        <section className="space-y-5 pb-10">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] block">Effects & Depth</label>
+              <span className="text-[9px] text-slate-400 font-medium">Elevation and shadows</span>
+            </div>
             <button 
               onClick={() => updateConfig({ shadowEnabled: true, shadowBlur: 10, shadowX: 0, shadowY: 4 })}
-              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
+              className="text-[9px] font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest px-2 py-1 rounded-md hover:bg-indigo-50"
             >
               Reset
             </button>
           </div>
           
-          <div className="space-y-3">
-             <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 transition-all hover:border-slate-300/80">
-              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Drop Shadow</Label>
+          <div className="space-y-4">
+             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-tight">Drop Shadow</Label>
+                </div>
               <Switch 
                 checked={config.shadowEnabled} 
                 onCheckedChange={(checked) => updateConfig({ shadowEnabled: checked })} 
@@ -399,17 +483,21 @@ export function Editor({ config, onChange }: EditorProps) {
             </div>
 
             {config.shadowEnabled && (
-              <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-2xl bg-indigo-50/20 border border-indigo-100/50 space-y-6 shadow-inner"
+              >
                 <ColorField 
-                  label="Shadow Color" 
+                  label="Shadow Tint" 
                   value={config.shadowColor} 
                   onChange={(c) => updateConfig({ shadowColor: c })} 
                 />
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Blur Strength</span>
-                    <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono text-indigo-600 font-bold">{config.shadowBlur}px</span>
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Blur Diffusion</span>
+                    <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-mono text-indigo-600 font-black">{config.shadowBlur}px</span>
                   </div>
                   <Slider 
                     value={[config.shadowBlur]} 
@@ -424,9 +512,9 @@ export function Editor({ config, onChange }: EditorProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">X Offset</div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Horiz. Offset</div>
                     <Slider 
                       value={[config.shadowX]} 
                       min={-25} 
@@ -439,8 +527,8 @@ export function Editor({ config, onChange }: EditorProps) {
                       }}
                     />
                   </div>
-                  <div className="space-y-3">
-                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Y Offset</div>
+                  <div className="space-y-4">
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Vert. Offset</div>
                     <Slider 
                       value={[config.shadowY]} 
                       min={-25} 
@@ -454,7 +542,7 @@ export function Editor({ config, onChange }: EditorProps) {
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </section>

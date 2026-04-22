@@ -6,7 +6,14 @@ export async function suggestIcons(theme: string): Promise<string[]> {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Suggest a list of exactly 10 essential icon names for a "${theme}" theme. Return only a comma-separated list of lowercase icon names suitable for searching in an icon library (e.g. "home, settings, user").`,
+      contents: `You are an expert UI/UX icon designer. Suggest 12 essential icon names for an app with a "${theme}" theme.
+      
+      Requirements:
+      - Include a mix of primary actions, navigation items, and thematic metaphors.
+      - Use standard noun-based names that exist in major icon libraries (Lucide, Material, Phosphor).
+      - Ensure the icons are stylistically cohesive for the given theme.
+      
+      Return only a JSON object with an "icons" array of lowercase strings.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -15,7 +22,7 @@ export async function suggestIcons(theme: string): Promise<string[]> {
             icons: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "List of icon names"
+              description: "Array of exactly 12 standard icon names"
             }
           },
           required: ["icons"]
